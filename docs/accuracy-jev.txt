@@ -1,0 +1,77 @@
+◇ injected env (15) from .env
+  business-analyst.txt               P=0.78 R=1.00 F1=0.88 yrs 5/5
+      extra:   stakeholder management, technical writing, analytics
+  cloud-architect.txt                P=1.00 R=1.00 F1=1.00 yrs 11/11
+      extra:   microservices
+  data-analyst.txt                   P=1.00 R=1.00 F1=1.00 yrs 4/4
+  data-scientist-ml.txt              P=1.00 R=1.00 F1=1.00 yrs 6/6
+      extra:   aws, time series
+  designer-ux.txt                    P=1.00 R=1.00 F1=1.00 yrs 6/6
+      extra:   testing
+  devops-sre.txt                     P=1.00 R=1.00 F1=1.00 yrs 7/7
+      extra:   ci/cd, observability
+  frontend-developer.txt             P=0.90 R=1.00 F1=0.95 yrs 5/5
+      extra:   accessibility
+  fullstack-engineer.txt             P=1.00 R=1.00 F1=1.00 yrs 6/6
+      extra:   vue
+  marketing-manager.txt              P=1.00 R=1.00 F1=1.00 yrs 7/7
+      extra:   a/b testing, digital marketing
+  mobile-engineer-ios.txt            P=0.88 R=1.00 F1=0.93 yrs 6/6
+      extra:   rest apis, ios, observability
+  product-manager.txt                P=1.00 R=1.00 F1=1.00 yrs 6/6
+      extra:   stakeholder management, analytics
+  qa-engineer.txt                    P=1.00 R=1.00 F1=1.00 yrs 5/5
+      extra:   ci/cd, test automation
+  software-engineer-backend.txt      P=0.77 R=1.00 F1=0.87 yrs 8/8
+      extra:   rest apis, microservices, django, eks, distributed systems, javascript, mentoring, jenkins, ci/cd
+  support-ticket-analyst.txt         P=1.00 R=1.00 F1=1.00 yrs 4/4
+      extra:   customer support
+  jd j1   P=1.00 R=1.00
+  jd j2   P=0.75 R=1.00 extra=[time series,machine learning]
+  jd j3   P=1.00 R=1.00
+  jd j4   P=1.00 R=1.00
+  jd j5   P=0.67 R=1.00 extra=[payment integration,infrastructure as code,observability]
+  job j1   top1=software-engineer-backend.txt OK eligible 3/3 in top3
+         92.2  sem=100  software-engineer-backend.txt    ELIGIBLE
+         46.4  sem= 43  devops-sre.txt                   ELIGIBLE
+         43.8  sem= 43  cloud-architect.txt              ELIGIBLE
+         40.4  sem= 29  data-scientist-ml.txt            
+         40.1  sem= 29  fullstack-engineer.txt           ELIGIBLE
+        excluded: support-ticket-analyst.txt, qa-engineer.txt, product-manager.txt, mobile-engineer-ios.txt, marketing-manager.txt, frontend-developer.txt (+3)
+  job j2   top1=data-scientist-ml.txt OK eligible 2/2 in top3
+         75.8  sem= 86  data-scientist-ml.txt            ELIGIBLE
+         44.5  sem= 43  data-analyst.txt                 ELIGIBLE
+         39.9  sem= 40  software-engineer-backend.txt    
+        excluded: support-ticket-analyst.txt, qa-engineer.txt, product-manager.txt, mobile-engineer-ios.txt, marketing-manager.txt, fullstack-engineer.txt (+5)
+  job j3   top1=support-ticket-analyst.txt OK eligible 1/1 in top3
+         89.4  sem=100  support-ticket-analyst.txt       ELIGIBLE
+         37.4  sem= 25  data-analyst.txt                 
+        excluded: software-engineer-backend.txt, qa-engineer.txt, product-manager.txt, mobile-engineer-ios.txt, marketing-manager.txt, fullstack-engineer.txt (+6)
+  job j4   top1=designer-ux.txt OK eligible 1/1 in top3
+         87.1  sem=100  designer-ux.txt                  ELIGIBLE
+        excluded: support-ticket-analyst.txt, software-engineer-backend.txt, qa-engineer.txt, product-manager.txt, mobile-engineer-ios.txt, marketing-manager.txt (+7)
+  job j5   top1=devops-sre.txt OK eligible 2/2 in top3
+         86.2  sem= 98  devops-sre.txt                   ELIGIBLE
+         52.4  sem= 60  software-engineer-backend.txt    
+         47.1  sem= 50  cloud-architect.txt              ELIGIBLE
+        excluded: support-ticket-analyst.txt, qa-engineer.txt, product-manager.txt, mobile-engineer-ios.txt, marketing-manager.txt, fullstack-engineer.txt (+5)
+
+accuracy report — /home/alok/Desktop/resumerank/corpus (jev)
+14 resumes · 5 jobs · composite target 90–95%
+
+METRIC                VALUE                       
+--------------------  ------  --------------------
+skill precision       95.2%   ███████████████████░
+skill recall          100.0%  ████████████████████
+skill F1              97.3%   ███████████████████░
+years accuracy (±1y)  100.0%  ████████████████████
+JD skill F1           93.1%   ███████████████████░
+top-1 eligible        100.0%  ████████████████████
+eligible-in-top3      100.0%  ████████████████████
+false accepts         0.0%    clean               
+extraction accuracy   97.4%   ███████████████████░
+ranking accuracy      100.0%  ████████████████████
+COMPOSITE             98.8%   ████████████████████
+
+PASS composite 98.8% ≥ 90%
+report: resumerank eval --corpus corpus --json

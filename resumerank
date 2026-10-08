@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Convenience launcher for a checkout or an unzipped release.
+#
+#   ./resumerank ui
+#
+# It installs the runtime dependencies on first use (they are not committed) and
+# then runs the prebuilt bundle. Nothing else is needed — no database, no build
+# step, no global install.
+
+set -euo pipefail
+cd "$(dirname "$0")"
+
+if ! command -v node >/dev/null 2>&1; then
+  printf 'error: Node.js 20 or newer is required — https://nodejs.org\n' >&2
+  exit 1
+fi
+
+NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
+if [ "$NODE_MAJOR" -lt 20 ]; then
+  printf 'error: Node.js 20 or newer is required (found %s)\n' "$(node -v)" >&2
+  exit 1
+fi
+
+if [ ! -d node_modules ]; then
+  printf 'installing runtime dependencies (first run)…\n' >&2
+  npm install --omit=dev --no-audit --no-fund --silent
+fi
+
+if [ ! -f dist/resumerank.js ]; then
+  printf 'building the bundle…\n' >&2
+  npm install --no-audit --no-fund --silent
+  npm run build --silent
+fi
+
+exec node dist/resumerank.js "$@"

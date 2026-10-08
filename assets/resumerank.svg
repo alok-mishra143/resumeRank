@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="resumerank">
+  <rect width="128" height="128" rx="28" fill="#191819"/>
+  <rect x="14" y="14" width="100" height="100" rx="20" fill="none" stroke="#b4541f" stroke-opacity="0.35" stroke-width="2"/>
+  <text x="50%" y="63%" dominant-baseline="middle" text-anchor="middle"
+        font-family="Inter, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif"
+        font-size="72" font-weight="700" fill="#f3f1ec">r</text>
+  <circle cx="96" cy="96" r="7" fill="#b4541f"/>
+</svg>

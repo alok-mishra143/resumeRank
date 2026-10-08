@@ -1,0 +1,32 @@
+{
+  "name": "resumerank",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-first resume ranking CLI: local JSON storage, semantic skill matching, optional TypeSafe Jev (System One) typed extraction.",
+  "bin": {
+    "resumerank": "dist/resumerank.js"
+  },
+  "scripts": {
+    "cli": "tsx src/cli/index.ts",
+    "build": "esbuild src/cli/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/resumerank.js && node scripts/add-shebang.mjs dist/resumerank.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "eval": "tsx src/cli/index.ts eval --corpus corpus",
+    "eval:offline": "tsx src/cli/index.ts eval --corpus corpus --offline"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "dotenv": "^18.0.1",
+    "mammoth": "^1.12.3",
+    "unpdf": "^1.8.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.0",
+    "vitest": "^4"
+  }
+}

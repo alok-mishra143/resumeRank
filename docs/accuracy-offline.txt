@@ -1,0 +1,24 @@
+◇ injected env (15) from .env
+
+accuracy report — /home/alok/Desktop/resumerank/corpus (offline)
+14 resumes · 5 jobs · composite target 90–95%
+
+METRIC                VALUE                       
+--------------------  ------  --------------------
+skill precision       91.2%   ██████████████████░░
+skill recall          100.0%  ████████████████████
+skill F1              95.0%   ███████████████████░
+years accuracy (±1y)  100.0%  ████████████████████
+JD skill F1           93.1%   ███████████████████░
+top-1 eligible        100.0%  ████████████████████
+eligible-in-top3      100.0%  ████████████████████
+false accepts         0.0%    clean               
+extraction accuracy   96.0%   ███████████████████░
+ranking accuracy      100.0%  ████████████████████
+COMPOSITE             98.2%   ████████████████████
+
+resumes below 0.85 skill F1
+  software-engineer-backend.txt      F1=0.83 extra=[rest apis,microservices,django,eks,distributed systems,github,javascript,mentoring]
+
+PASS composite 98.2% ≥ 90%
+report: resumerank eval --corpus corpus --json

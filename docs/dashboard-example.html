@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>resumerank — candidate pool</title>
+<style>
+  :root {
+    --paper:#f3f1ec; --surface:#fff; --surface-2:#faf8f5; --sunken:#eeece7;
+    --line:#e3dfd6; --ink:#191819; --ink-2:#444249; --muted:#74716a;
+    --accent:#b4541f; --accent-soft:rgba(180,84,31,.1); --teal:#0f6f68;
+    --ok:#146c43; --ok-soft:rgba(20,108,67,.1); --warn:#8a5a09; --warn-soft:rgba(138,90,9,.12);
+    --bad:#a32020; --bad-soft:rgba(163,32,32,.09);
+    --radius:12px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#0f1114; --surface:#171a1f; --surface-2:#1c2026; --sunken:#12151a;
+      --line:#272c34; --ink:#ebe8e2; --ink-2:#c3bfb8; --muted:#8d8a83;
+      --accent:#d4794a; --accent-soft:rgba(212,121,74,.14); --teal:#4fb3a9;
+      --ok:#63c08a; --ok-soft:rgba(99,192,138,.14); --warn:#d7a13f; --warn-soft:rgba(215,161,63,.14);
+      --bad:#e07b7b; --bad-soft:rgba(224,123,123,.14);
+    }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:32px 24px 64px; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  header.top { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding-bottom:20px; border-bottom:1px solid var(--line); }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .mark { width:38px; height:38px; border-radius:11px; background:var(--ink); color:var(--paper); display:grid; place-items:center; font-weight:700; font-size:19px; }
+  h1 { margin:0; font-size:20px; letter-spacing:-.01em; }
+  .sub { color:var(--muted); font-size:13px; }
+  .stamp { text-align:right; color:var(--muted); font-size:12.5px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:24px 0 8px; }
+  .kpi { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; }
+  .kpi b { display:block; font-size:24px; letter-spacing:-.02em; }
+  .kpi span { color:var(--muted); font-size:12.5px; }
+  section.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-top:20px; }
+  .card-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:12px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0; }
+  h3 { margin:0; font-size:16px; }
+  .meta { color:var(--muted); font-size:12.5px; font-family:var(--mono); }
+  ul.skills { list-style:none; margin:0; padding:0; }
+  ul.skills li { display:flex; align-items:center; gap:10px; padding:5px 0; font-size:14px; }
+  .skill-name { width:190px; flex:none; }
+  .bar { display:inline-block; flex:1; height:8px; border-radius:99px; background:var(--sunken); overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--accent); border-radius:99px; }
+  .num { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  table.table { width:100%; border-collapse:collapse; }
+  table.table th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--line); }
+  table.table td { padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.table tr:last-child td { border-bottom:0; }
+  th.num, td.num { text-align:right; }
+  td.name strong { display:block; }
+  .file { display:block; color:var(--muted); font-size:12px; font-family:var(--mono); }
+  .chip { display:inline-block; padding:2px 8px; margin:1px 3px 1px 0; border:1px solid var(--line); border-radius:99px; font-size:12px; color:var(--ink-2); background:var(--surface-2); }
+  .chip.more { color:var(--muted); }
+  .tag { display:inline-block; padding:1px 7px; border-radius:99px; font-size:11.5px; border:1px solid var(--line); }
+  .tag.ok { color:var(--ok); background:var(--ok-soft); border-color:transparent; }
+  .tag.warn { color:var(--warn); background:var(--warn-soft); border-color:transparent; }
+  .tag.muted { color:var(--muted); }
+  .rank { color:var(--accent); font-weight:600; }
+  td.ok { color:var(--ok); } td.warn { color:var(--warn); } td.bad { color:var(--bad); }
+  .muted { color:var(--muted); }
+  .legend { margin:0 0 12px; color:var(--muted); font-size:12.5px; }
+  .legend b { color:var(--ink-2); font-weight:600; }
+  footer { margin-top:32px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px; }
+  @media print { body { background:#fff; padding:0; } section.card, .kpi { break-inside:avoid; } }
+  @media (max-width:720px) { .skill-name { width:120px; } td:nth-child(4) { display:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">r</div>
+      <div>
+        <h1>resumerank</h1>
+        <div class="sub">Candidate pool · 14 resumes · AI-assisted verification on</div>
+      </div>
+    </div>
+    <div class="stamp">generated 2026-10-08 17:22<br>stored on this machine only</div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><b>14</b><span>candidates</span></div>
+    <div class="kpi"><b>101</b><span>distinct skills</span></div>
+    <div class="kpi"><b>20</b><span>saved rankings</span></div>
+    <div class="kpi"><b>10</b><span>candidates ever ranked</span></div>
+    <div class="kpi"><b>12</b><span>CVs that need a quick look</span></div>
+  </div>
+
+  <section class="card">
+    <div class="card-head"><h2>Skills across the pool</h2><span class="meta">how many candidates have each skill</span></div>
+    <ul class="skills"><li>
+      <span class="skill-name">Python</span>
+      <span class="bar"><i style="width:43%"></i></span>
+      <span class="num">6/14</span>
+    </li><li>
+      <span class="skill-name">AWS</span>
+      <span class="bar"><i style="width:36%"></i></span>
+      <span class="num">5/14</span>
+    </li><li>
+      <span class="skill-name">SQL</span>
+      <span class="bar"><i style="width:36%"></i></span>
+      <span class="num">5/14</span>
+    </li><li>
+      <span class="skill-name">Docker</span>
+      <span class="bar"><i style="width:29%"></i></span>
+      <span class="num">4/14</span>
+    </li><li>
+      <span class="skill-name">Jira</span>
+      <span class="bar"><i style="width:29%"></i></span>
+      <span class="num">4/14</span>
+    </li><li>
+      <span class="skill-name">CI/CD</span>
+      <span class="bar"><i style="width:21%"></i></span>
+      <span class="num">3/14</span>
+    </li><li>
+      <span class="skill-name">Kubernetes</span>
+      <span class="bar"><i style="width:21%"></i></span>
+      <span class="num">3/14</span>
+    </li><li>
+      <span class="skill-name">Terraform</span>
+      <span class="bar"><i style="width:21%"></i></span>
+      <span class="num">3/14</span>
+    </li><li>
+      <span class="skill-name">A/B Testing</span>
+      <span class="bar"><i style="width:14%"></i></span>
+      <span class="num">2/14</span>
+    </li><li>
+      <span class="skill-name">Analytics</span>
+      <span class="bar"><i style="width:14%"></i></span>
+      <span class="num">2/14</span>
+    </li><li>
+      <span class="skill-name">Excel</span>
+      <span class="bar"><i style="width:14%"></i></span>
+      <span class="num">2/14</span>
+    </li><li>
+      <span class="skill-name">Figma</span>
+      <span class="bar"><i style="width:14%"></i></span>
+      <span class="num">2/14</span>
+    </li></ul>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Candidates</h2><span class="meta">14 in the pool, newest first</span></div>
+    <p class="legend"><b>years</b> = experience read from the CV &nbsp;·&nbsp; <b>read</b> = how well the CV could be read, 1.00 meaning every field was found &nbsp;·&nbsp; <b>status</b> = anything to know before shortlisting, e.g. a CV with no dates, dates that do not add up, or the same file added twice</p>
+    <table class="table">
+      <thead><tr><th>candidate</th><th>role</th><th class="num">years</th><th>skills</th><th class="num">read</th><th>status</th></tr></thead>
+      <tbody><tr>
+    <td class="name"><strong>TOM BRENNAN</strong><span class="file">support-ticket-analyst.txt</span></td>
+    <td>Support Ticket Analyst<span class="file">mid</span></td>
+    <td class="num">4</td>
+    <td><span class="chip">Zendesk</span><span class="chip">SQL</span><span class="chip">Knowledge Base</span><span class="chip">SLA Management</span><span class="chip">Ticket Triage</span><span class="chip">Customer Communication</span><span class="chip">Jira</span><span class="chip">Customer Support</span></td>
+    <td class="num">0.81</td>
+    <td><span class="tag warn" title="dated roles span ~7.8 yrs but the resume claims 4 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>ALEXANDRA &quot;ALEX&quot; MERCER</strong><span class="file">software-engineer-backend.txt</span></td>
+    <td>Backend Engineer<span class="file">senior</span></td>
+    <td class="num">8</td>
+    <td><span class="chip">Go</span><span class="chip">Python</span><span class="chip">PostgreSQL</span><span class="chip">Kubernetes</span><span class="chip">Docker</span><span class="chip">Redis</span><span class="chip">AWS</span><span class="chip">Terraform</span><span class="chip more">+11</span></td>
+    <td class="num">0.91</td>
+    <td><span class="tag warn" title="dated roles span ~12.3 yrs but the resume claims 8 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>NADIA AL-FARSI</strong><span class="file">qa-engineer.txt</span></td>
+    <td>QA Engineer<span class="file">senior</span></td>
+    <td class="num">5</td>
+    <td><span class="chip">Playwright</span><span class="chip">Selenium</span><span class="chip">Python</span><span class="chip">Pytest</span><span class="chip">API Testing</span><span class="chip">Postman</span><span class="chip">CI/CD</span><span class="chip">Jira</span><span class="chip more">+1</span></td>
+    <td class="num">0.79</td>
+    <td></td>
+  </tr><tr>
+    <td class="name"><strong>SOFIA RAMIREZ</strong><span class="file">product-manager.txt</span></td>
+    <td>Senior Product Manager<span class="file">senior</span></td>
+    <td class="num">6</td>
+    <td><span class="chip">Roadmapping</span><span class="chip">Agile</span><span class="chip">Stakeholder Management</span><span class="chip">User Research</span><span class="chip">A/B Testing</span><span class="chip">Amplitude</span><span class="chip">Jira</span><span class="chip">SQL</span><span class="chip more">+1</span></td>
+    <td class="num">0.80</td>
+    <td><span class="tag warn" title="dated roles span ~7.1 yrs but the resume claims 6 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>RINA PATEL</strong><span class="file">mobile-engineer-ios.txt</span></td>
+    <td>iOS Engineer<span class="file">senior</span></td>
+    <td class="num">6</td>
+    <td><span class="chip">Swift</span><span class="chip">SwiftUI</span><span class="chip">REST APIs</span><span class="chip">Objective-C</span><span class="chip">Core Data</span><span class="chip">Fastlane</span><span class="chip">Combine</span><span class="chip">XCTest</span><span class="chip more">+2</span></td>
+    <td class="num">0.83</td>
+    <td><span class="tag warn" title="dated roles span ~8.8 yrs but the resume claims 6 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>GABRIEL TORRES</strong><span class="file">marketing-manager.txt</span></td>
+    <td>Digital Marketing Manager<span class="file">senior</span></td>
+    <td class="num">7</td>
+    <td><span class="chip">SEO</span><span class="chip">Content Strategy</span><span class="chip">Google Analytics</span><span class="chip">Email Marketing</span><span class="chip">A/B Testing</span><span class="chip">Copywriting</span><span class="chip">Google Ads</span><span class="chip">HubSpot</span><span class="chip more">+1</span></td>
+    <td class="num">0.74</td>
+    <td><span class="tag warn" title="dated roles span ~8.1 yrs but the resume claims 7 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>OMAR HADDAD</strong><span class="file">fullstack-engineer.txt</span></td>
+    <td>Full-Stack Engineer<span class="file">senior</span></td>
+    <td class="num">6</td>
+    <td><span class="chip">Node.js</span><span class="chip">React</span><span class="chip">PostgreSQL</span><span class="chip">Next.js</span><span class="chip">Express</span><span class="chip">JavaScript</span><span class="chip">TypeScript</span><span class="chip">MongoDB</span><span class="chip more">+3</span></td>
+    <td class="num">0.86</td>
+    <td></td>
+  </tr><tr>
+    <td class="name"><strong>Marcus Bell</strong><span class="file">frontend-developer.txt</span></td>
+    <td>Frontend Developer<span class="file">senior</span></td>
+    <td class="num">5</td>
+    <td><span class="chip">TypeScript</span><span class="chip">React</span><span class="chip">Tailwind</span><span class="chip">Next.js</span><span class="chip">CSS</span><span class="chip">Accessibility</span><span class="chip">Webpack</span><span class="chip">Cypress</span><span class="chip more">+2</span></td>
+    <td class="num">0.83</td>
+    <td><span class="tag warn" title="dated roles span ~7.3 yrs but the resume claims 5 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>DEVON OKAFOR</strong><span class="file">devops-sre.txt</span></td>
+    <td>DevOps Engineer<span class="file">senior</span></td>
+    <td class="num">7</td>
+    <td><span class="chip">Kubernetes</span><span class="chip">Terraform</span><span class="chip">Prometheus</span><span class="chip">GitLab CI</span><span class="chip">Ansible</span><span class="chip">Grafana</span><span class="chip">AWS</span><span class="chip">Python</span><span class="chip more">+4</span></td>
+    <td class="num">0.89</td>
+    <td><span class="tag warn" title="dated roles span ~10.8 yrs but the resume claims 7 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>ELENA MORENO</strong><span class="file">designer-ux.txt</span></td>
+    <td>Product Designer<span class="file">senior</span></td>
+    <td class="num">6</td>
+    <td><span class="chip">User Research</span><span class="chip">Design Systems</span><span class="chip">Interaction Design</span><span class="chip">Figma</span><span class="chip">Wireframing</span><span class="chip">Prototyping</span><span class="chip">Testing</span></td>
+    <td class="num">0.76</td>
+    <td><span class="tag warn" title="dated roles span ~8.8 yrs but the resume claims 6 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>PRIYA NAKAMURA</strong><span class="file">data-scientist-ml.txt</span></td>
+    <td>Machine Learning Engineer<span class="file">senior</span></td>
+    <td class="num">6</td>
+    <td><span class="chip">SageMaker</span><span class="chip">Airflow</span><span class="chip">PyTorch</span><span class="chip">XGBoost</span><span class="chip">Python</span><span class="chip">Pandas</span><span class="chip">Spark</span><span class="chip">SQL</span><span class="chip more">+3</span></td>
+    <td class="num">0.86</td>
+    <td><span class="tag warn" title="dated roles span ~8.1 yrs but the resume claims 6 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>jordan lee</strong><span class="file">data-analyst.txt</span></td>
+    <td>Data Analyst<span class="file">mid</span></td>
+    <td class="num">4</td>
+    <td><span class="chip">SQL</span><span class="chip">Tableau</span><span class="chip">Python</span><span class="chip">Pandas</span><span class="chip">Excel</span><span class="chip">Data Visualization</span><span class="chip">Statistics</span></td>
+    <td class="num">0.74</td>
+    <td><span class="tag warn" title="dated roles span ~5.1 yrs but the resume claims 4 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>HELENA VOSS</strong><span class="file">cloud-architect.txt</span></td>
+    <td>Solutions Architect<span class="file">staff</span></td>
+    <td class="num">11</td>
+    <td><span class="chip">Terraform</span><span class="chip">IAM</span><span class="chip">Microservices</span><span class="chip">Serverless</span><span class="chip">Kubernetes</span><span class="chip">Python</span><span class="chip">Docker</span><span class="chip">GCP</span><span class="chip more">+2</span></td>
+    <td class="num">0.84</td>
+    <td><span class="tag warn" title="dated roles span ~12.1 yrs but the resume claims 11 yrs">dates don&#39;t add up</span></td>
+  </tr><tr>
+    <td class="name"><strong>CAROLINE ZHANG</strong><span class="file">business-analyst.txt</span></td>
+    <td>Business Analyst<span class="file">mid</span></td>
+    <td class="num">5</td>
+    <td><span class="chip">Process Mapping</span><span class="chip">Power BI</span><span class="chip">SQL</span><span class="chip">Requirements Gathering</span><span class="chip">Stakeholder Management</span><span class="chip">Tableau</span><span class="chip">Excel</span><span class="chip">Jira</span><span class="chip more">+2</span></td>
+    <td class="num">0.77</td>
+    <td><span class="tag warn" title="dated roles span ~6.1 yrs but the resume claims 5 yrs">dates don&#39;t add up</span></td>
+  </tr></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">5 scored · offline · 2026-10-08 16:56</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">77.9</td>
+      <td class="num ok">7/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">53.6</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">51.2</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">49.0</td>
+      <td class="num warn">2/7</td>
+      <td><span class="tag warn">required-skill coverage 29% is below the 40% floor (2/7 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">48.3</td>
+      <td class="num warn">2/7</td>
+      <td><span class="tag warn">required-skill coverage 29% is below the 40% floor (2/7 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">7 scored · offline · 2026-10-07 20:47</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">76.0</td>
+      <td class="num ok">6/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">60.5</td>
+      <td class="num ok">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">59.0</td>
+      <td class="num warn">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">52.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">50.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">7 scored · offline · 2026-10-07 20:47</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">76.0</td>
+      <td class="num ok">6/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">60.5</td>
+      <td class="num ok">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">59.0</td>
+      <td class="num warn">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">52.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">50.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">7 scored · offline · 2026-10-07 20:47</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">76.0</td>
+      <td class="num ok">6/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">60.5</td>
+      <td class="num ok">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">59.0</td>
+      <td class="num warn">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">52.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">50.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">7 scored · offline · 2026-10-07 20:47</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">76.0</td>
+      <td class="num ok">6/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">60.5</td>
+      <td class="num ok">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">59.0</td>
+      <td class="num warn">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">52.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">50.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">7 scored · offline · 2026-10-07 20:47</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">76.0</td>
+      <td class="num ok">6/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">60.5</td>
+      <td class="num ok">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">59.0</td>
+      <td class="num warn">3/6</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">52.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">50.2</td>
+      <td class="num warn">2/6</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (2/6 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">6 scored · jev-latest · 2026-10-07 20:38</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">92.2</td>
+      <td class="num ok">7/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">46.4</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">44.0</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">43.2</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag warn">required-skill coverage 40% is below the 40% floor (3/7 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">39.9</td>
+      <td class="num bad">2/7</td>
+      <td><span class="tag warn">required-skill coverage 29% is below the 40% floor (2/7 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Senior Backend Engineer</h3>
+      <span class="meta">6 scored · jev-1.13.0 · 2026-10-07 20:38</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">92.2</td>
+      <td class="num ok">7/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">46.4</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">44.0</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>data-scientist-ml.txt</strong></td>
+      <td class="num">43.2</td>
+      <td class="num warn">3/7</td>
+      <td><span class="tag warn">required-skill coverage 40% is below the 40% floor (3/7 matched)</span></td>
+    </tr><tr>
+      <td class="num rank">5</td>
+      <td class="name"><strong>fullstack-engineer.txt</strong></td>
+      <td class="num">39.9</td>
+      <td class="num bad">2/7</td>
+      <td><span class="tag warn">required-skill coverage 29% is below the 40% floor (2/7 matched)</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>DevOps / Site Reliability Engineer</h3>
+      <span class="meta">4 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">86.1</td>
+      <td class="num ok">8/8</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">52.3</td>
+      <td class="num warn">5/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">46.7</td>
+      <td class="num warn">4/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>mobile-engineer-ios.txt</strong></td>
+      <td class="num">41.1</td>
+      <td class="num warn">3/8</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (3/8 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>DevOps / Site Reliability Engineer</h3>
+      <span class="meta">4 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">86.1</td>
+      <td class="num ok">8/8</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">52.3</td>
+      <td class="num warn">5/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">46.7</td>
+      <td class="num warn">4/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>mobile-engineer-ios.txt</strong></td>
+      <td class="num">41.1</td>
+      <td class="num warn">3/8</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (3/8 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>DevOps / Site Reliability Engineer</h3>
+      <span class="meta">4 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">86.1</td>
+      <td class="num ok">8/8</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">52.3</td>
+      <td class="num warn">5/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">46.7</td>
+      <td class="num warn">4/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>mobile-engineer-ios.txt</strong></td>
+      <td class="num">41.1</td>
+      <td class="num warn">3/8</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (3/8 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>DevOps / Site Reliability Engineer</h3>
+      <span class="meta">4 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">86.1</td>
+      <td class="num ok">8/8</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">52.3</td>
+      <td class="num warn">5/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">46.7</td>
+      <td class="num warn">4/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>mobile-engineer-ios.txt</strong></td>
+      <td class="num">41.1</td>
+      <td class="num warn">3/8</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (3/8 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>DevOps / Site Reliability Engineer</h3>
+      <span class="meta">4 scored · jev-1.13.0 · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>devops-sre.txt</strong></td>
+      <td class="num">86.1</td>
+      <td class="num ok">8/8</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>software-engineer-backend.txt</strong></td>
+      <td class="num">52.3</td>
+      <td class="num warn">5/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>cloud-architect.txt</strong></td>
+      <td class="num">46.7</td>
+      <td class="num warn">4/8</td>
+      <td><span class="tag warn">out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">4</td>
+      <td class="name"><strong>mobile-engineer-ios.txt</strong></td>
+      <td class="num">41.1</td>
+      <td class="num warn">3/8</td>
+      <td><span class="tag warn">required-skill coverage 33% is below the 40% floor (3/8 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Product Designer (UX)</h3>
+      <span class="meta">1 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>designer-ux.txt</strong></td>
+      <td class="num">87.0</td>
+      <td class="num ok">4/4</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Product Designer (UX)</h3>
+      <span class="meta">1 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>designer-ux.txt</strong></td>
+      <td class="num">87.0</td>
+      <td class="num ok">4/4</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Product Designer (UX)</h3>
+      <span class="meta">1 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>designer-ux.txt</strong></td>
+      <td class="num">87.0</td>
+      <td class="num ok">4/4</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Product Designer (UX)</h3>
+      <span class="meta">1 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>designer-ux.txt</strong></td>
+      <td class="num">87.0</td>
+      <td class="num ok">4/4</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Product Designer (UX)</h3>
+      <span class="meta">1 scored · jev-1.13.0 · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>designer-ux.txt</strong></td>
+      <td class="num">87.0</td>
+      <td class="num ok">4/4</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Support Ticket Analyst</h3>
+      <span class="meta">3 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>support-ticket-analyst.txt</strong></td>
+      <td class="num">89.3</td>
+      <td class="num ok">4/4</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>business-analyst.txt</strong></td>
+      <td class="num">41.2</td>
+      <td class="num warn">1/4</td>
+      <td><span class="tag warn">required-skill coverage 25% is below the 40% floor (1/4 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>data-analyst.txt</strong></td>
+      <td class="num">37.4</td>
+      <td class="num bad">1/4</td>
+      <td><span class="tag warn">required-skill coverage 25% is below the 40% floor (1/4 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+<section class="card">
+    <header class="card-head">
+      <h3>Support Ticket Analyst</h3>
+      <span class="meta">3 scored · jev-latest · 2026-10-07 20:37</span>
+    </header>
+    <table class="table">
+      <thead><tr><th class="num">#</th><th>candidate</th><th class="num">score</th><th class="num">required</th><th>flags</th></tr></thead>
+      <tbody><tr>
+      <td class="num rank">1</td>
+      <td class="name"><strong>support-ticket-analyst.txt</strong></td>
+      <td class="num">89.3</td>
+      <td class="num ok">4/4</td>
+      <td><span class="tag muted">clear</span></td>
+    </tr><tr>
+      <td class="num rank">2</td>
+      <td class="name"><strong>business-analyst.txt</strong></td>
+      <td class="num">41.2</td>
+      <td class="num warn">1/4</td>
+      <td><span class="tag warn">required-skill coverage 25% is below the 40% floor (1/4 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr><tr>
+      <td class="num rank">3</td>
+      <td class="name"><strong>data-analyst.txt</strong></td>
+      <td class="num">37.4</td>
+      <td class="num bad">1/4</td>
+      <td><span class="tag warn">required-skill coverage 25% is below the 40% floor (1/4 matched); out-of-domain candidate: neither the skills nor the domain keywords line up</span></td>
+    </tr></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <strong>Adding resumes or running a new ranking needs the app:</strong> run
+    <code>resumerank ui</code> (it opens in your browser) or <code>resumerank dash</code>
+    for the terminal. This page is a snapshot — regenerate it any time with
+    <code>resumerank dashboard</code>. Every credited skill carries its provenance and
+    nothing leaves this machine.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# dependencies
+node_modules/
+
+# secrets — put your TypeSafe key in ~/.resumerank/config.json (Settings in the UI)
+.env
+.env.*
+!.env.example
+
+# local data and logs
+*.log
+.resumerank/
+corpus/.cache/
+
+# third-party resume PDFs used for testing are not redistributed
+corpus-real/
+
+# editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# NOTE: dist/ is intentionally committed — the installer uses the prebuilt
+# bundle so users need no build step.
