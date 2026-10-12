@@ -30,6 +30,47 @@ function Need([string]$name) {
   }
 }
 
+$script:NpmCommand = $null
+$script:NpmCliScript = $null
+
+function Resolve-Npm() {
+  $npm = Get-Command npm -ErrorAction SilentlyContinue
+  if ($npm) {
+    $script:NpmCommand = $npm.Source
+    return
+  }
+
+  $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+  if (-not $nodeCmd) {
+    Die "Node.js is required but was not found on PATH"
+  }
+
+  $nodeDir = Split-Path -Parent $nodeCmd.Source
+  $candidates = @(
+    (Join-Path $nodeDir "node_modules\npm\bin\npm-cli.js"),
+    (Join-Path $nodeDir "..\lib\node_modules\npm\bin\npm-cli.js")
+  )
+
+  foreach ($candidate in $candidates) {
+    if (Test-Path $candidate) {
+      $script:NpmCliScript = (Resolve-Path $candidate).Path
+      return
+    }
+  }
+
+  Die "npm is required but could not be found. Reinstall Node.js from https://nodejs.org and ensure npm is installed."
+}
+
+function Invoke-Npm {
+  param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
+
+  if ($script:NpmCommand) {
+    & $script:NpmCommand @Args
+  } else {
+    & node $script:NpmCliScript @Args
+  }
+}
+
 function Remove-DirectoryContents([string]$path) {
   if (Test-Path $path) {
     Get-ChildItem -LiteralPath $path -Force | Remove-Item -Recurse -Force
@@ -49,7 +90,6 @@ function Copy-LocalRepo([string]$source, [string]$destination) {
 Bold "resumerank install (windows)"
 
 Need node
-Need npm
 Need tar
 
 $nodeVersion = (& node -v).Trim()
@@ -58,6 +98,10 @@ if ($nodeMajor -lt 20) {
   Die "Node.js 20 or newer is required (found $nodeVersion). Install it from https://nodejs.org."
 }
 Info "node $nodeVersion"
+Resolve-Npm
+if ($script:NpmCliScript) {
+  Info "npm cli script: $script:NpmCliScript"
+}
 
 $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("resumerank-install-" + [System.Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $tmp | Out-Null
@@ -111,11 +155,11 @@ try {
   try {
     if (Test-Path (Join-Path $appDir "dist\resumerank.js")) {
       Info "installing runtime dependencies (prebuilt bundle found)..."
-      & npm install --omit=dev --no-audit --no-fund --silent
+      Invoke-Npm install --omit=dev --no-audit --no-fund --silent
     } else {
       Info "installing dependencies and building..."
-      & npm install --no-audit --no-fund --silent
-      & npm run build --silent
+      Invoke-Npm install --no-audit --no-fund --silent
+      Invoke-Npm run build --silent
     }
   } finally {
     Pop-Location
