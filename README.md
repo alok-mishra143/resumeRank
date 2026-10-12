@@ -68,10 +68,20 @@ JD text  ─►  requirements  ─►  semantic matching  ─►  weighted score
 
 ## Install
 
+### Linux / macOS
+
 One line (needs Node.js 20+; installs to `~/.resumerank-app`, launcher in `~/.local/bin`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/alok-mishra143/resumerank/main/install.sh | bash
+```
+
+### Windows (PowerShell)
+
+Use the PowerShell installer (this avoids the `bash is not recognized` error in PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/alok-mishra143/resumerank/main/install.ps1 | iex
 ```
 
 Then:
@@ -91,10 +101,11 @@ RESUMERANK_REF=v1.0.0 \
 
 ### Opening it like an app
 
-`install.sh` also drops a **resumerank** entry and icon into your applications menu
-(`~/.local/share/applications/resumerank.desktop`, icon in `~/.local/share/icons`),
-so the app can be started by clicking instead of typing. It runs `resumerank ui`,
-which serves on `127.0.0.1` and opens your browser.
+On Linux, `install.sh` also drops a **resumerank** entry and icon into your
+applications menu (`~/.local/share/applications/resumerank.desktop`, icon in
+`~/.local/share/icons`), so the app can be started by clicking instead of
+typing. It runs `resumerank ui`, which serves on `127.0.0.1` and opens your
+browser.
 
 ### Manual install
 
@@ -380,7 +391,8 @@ src/
 tools/            benchmark, audit, verification and debug probes
 corpus/           14 labelled resumes + 5 job descriptions + gold.json
 test/             101 tests
-install.sh        curl-able installer
+install.sh        curl-able installer (Linux/macOS)
+install.ps1       PowerShell installer (Windows)
 resumerank        launcher for a checkout or unzipped release
 ```
 
